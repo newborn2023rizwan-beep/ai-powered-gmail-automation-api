@@ -618,6 +618,7 @@ def send_test_email(
 
     return sent_message
 
+
 # =========================================================
 # GET GMAIL DRAFTS
 # =========================================================
@@ -646,3 +647,142 @@ def get_gmail_drafts(credentials):
     )
 
     return drafts
+
+
+# =========================================================
+# CREATE CAMPAIGN GMAIL DRAFT
+# =========================================================
+
+def create_campaign_gmail_draft(
+    credentials,
+    to_email,
+    bcc_emails,
+    subject,
+    body,
+):
+    """
+    Create a new Gmail Draft for a campaign email.
+
+    The first recipient is placed in TO.
+    Remaining recipients are placed in BCC.
+
+    IMPORTANT:
+    This function ONLY creates a draft.
+    It does NOT send the email.
+    """
+
+    # -----------------------------------------------------
+    # VALIDATE CREDENTIALS
+    # -----------------------------------------------------
+
+    if credentials is None:
+
+        raise ValueError(
+            "Authenticated Gmail credentials are required"
+        )
+
+    # -----------------------------------------------------
+    # CREATE GMAIL SERVICE
+    # -----------------------------------------------------
+
+    service = create_gmail_service(
+        credentials
+    )
+
+    # -----------------------------------------------------
+    # NORMALIZE TO EMAIL
+    # -----------------------------------------------------
+
+    if isinstance(to_email, list):
+
+        if not to_email:
+
+            raise ValueError(
+                "At least one recipient is required"
+            )
+
+        to_email = to_email[0]
+
+    if not to_email:
+
+        raise ValueError(
+            "TO recipient is required"
+        )
+
+    # -----------------------------------------------------
+    # NORMALIZE BCC EMAILS
+    # -----------------------------------------------------
+
+    if bcc_emails is None:
+
+        bcc_emails = []
+
+    elif isinstance(bcc_emails, str):
+
+        bcc_emails = [bcc_emails]
+
+    # Remove empty values and duplicates.
+    bcc_emails = list(
+        dict.fromkeys(
+            email.strip()
+            for email in bcc_emails
+            if email and email.strip()
+        )
+    )
+
+    # Do not duplicate the TO recipient in BCC.
+    bcc_emails = [
+        email
+        for email in bcc_emails
+        if email.lower() != to_email.lower()
+    ]
+
+    # -----------------------------------------------------
+    # CREATE MIME MESSAGE
+    # -----------------------------------------------------
+
+    message = MIMEText(
+        body,
+        "plain",
+        "utf-8"
+    )
+
+    message["To"] = to_email
+    message["Subject"] = subject
+
+    if bcc_emails:
+
+        message["Bcc"] = ", ".join(
+            bcc_emails
+        )
+
+    # -----------------------------------------------------
+    # ENCODE MESSAGE
+    # -----------------------------------------------------
+
+    raw_message = (
+        base64.urlsafe_b64encode(
+            message.as_bytes()
+        )
+        .decode("utf-8")
+    )
+
+    # -----------------------------------------------------
+    # CREATE GMAIL DRAFT
+    # -----------------------------------------------------
+
+    draft = (
+        service.users()
+        .drafts()
+        .create(
+            userId="me",
+            body={
+                "message": {
+                    "raw": raw_message
+                }
+            }
+        )
+        .execute()
+    )
+
+    return draft

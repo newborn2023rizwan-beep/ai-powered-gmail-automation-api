@@ -26,12 +26,10 @@ from app.services.email_tracking_service import (
     mark_email_processed,
 )
 
-
 router = APIRouter(
     prefix="/auth",
     tags=["Google Auth"],
 )
-
 
 # =========================================================
 # GOOGLE SCOPES
@@ -41,7 +39,6 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.compose",
 ]
-
 
 # =========================================================
 # CREATE GOOGLE OAUTH FLOW
@@ -165,7 +162,7 @@ def google_callback(
         )
 
         return RedirectResponse(
-            url="http://localhost:5175/"
+            url="/"
         )
 
     except Exception as e:
@@ -416,7 +413,9 @@ def get_gmail_drafts_endpoint(
                 "details": str(e),
             },
         )
-    # =========================================================
+
+
+# =========================================================
 # GET SINGLE GMAIL DRAFT
 # =========================================================
 
@@ -483,7 +482,7 @@ def get_single_gmail_draft(
 
 
 # =========================================================
-# GENERATE AI REPLY + CREATE GMAIL DRAFT
+# GENERATE GMAIL DRAFT
 # =========================================================
 
 @router.post("/gmail/emails/{message_id}/generate-draft")
@@ -580,33 +579,95 @@ def generate_gmail_draft(
             )
 
         # -------------------------------------------------
-        # AI ANALYSIS
+        # AI ANALYSIS + REPLY DECISION
         # -------------------------------------------------
 
         analysis = process_email_with_ai(
-            subject=email.get(
-                "subject",
-                ""
-            ),
-            body=email.get(
-                "body",
-                ""
-            ),
+            subject=email.get("subject", ""),
+            body=email.get("body", ""),
         )
 
         # -------------------------------------------------
-        # GENERATE REPLY
+        # PARSE AI DECISION
+        # -------------------------------------------------
+
+        import json
+
+        try:
+
+            analysis_data = json.loads(analysis)
+
+        except json.JSONDecodeError:
+
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "AI returned invalid analysis format",
+                    "details": analysis,
+                },
+            )
+
+        should_reply = analysis_data.get(
+            "should_reply",
+            False
+        )
+
+        needs_review = analysis_data.get(
+            "needs_review",
+            True
+        )
+
+        confidence = analysis_data.get(
+            "confidence",
+            "low"
+        )
+
+        # -------------------------------------------------
+        # DO NOT REPLY
+        # -------------------------------------------------
+
+        if not should_reply:
+
+            return {
+                "message": "No reply required",
+                "draft_created": False,
+                "original_message_id": message_id,
+                "analysis": analysis_data,
+            }
+
+        # -------------------------------------------------
+        # HUMAN REVIEW REQUIRED
+        # -------------------------------------------------
+
+        if needs_review:
+
+            return {
+                "message": "Human review required",
+                "draft_created": False,
+                "original_message_id": message_id,
+                "analysis": analysis_data,
+            }
+
+        # -------------------------------------------------
+        # LOW CONFIDENCE
+        # -------------------------------------------------
+
+        if confidence == "low":
+
+            return {
+                "message": "AI confidence is too low",
+                "draft_created": False,
+                "original_message_id": message_id,
+                "analysis": analysis_data,
+            }
+
+        # -------------------------------------------------
+        # GENERATE AI REPLY
         # -------------------------------------------------
 
         reply = generate_email_reply(
-            subject=email.get(
-                "subject",
-                ""
-            ),
-            body=email.get(
-                "body",
-                ""
-            ),
+            subject=email.get("subject", ""),
+            body=email.get("body", ""),
             analysis=analysis,
         )
 
@@ -628,23 +689,22 @@ def generate_gmail_draft(
             message_id
         )
 
+        # -------------------------------------------------
+        # FINAL RESPONSE
+        # -------------------------------------------------
+
         return {
             "message": "AI reply draft created successfully",
+            "draft_created": True,
             "original_message_id": message_id,
-            "subject": email.get(
-                "subject"
-            ),
-            "analysis": analysis,
+            "subject": email.get("subject"),
+            "analysis": analysis_data,
             "reply": reply,
-            "draft_id": draft.get(
-                "id"
-            ),
+            "draft_id": draft.get("id"),
             "thread_id": draft.get(
                 "message",
                 {}
-            ).get(
-                "threadId"
-            ),
+            ).get("threadId"),
         }
 
     except Exception as e:
