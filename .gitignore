@@ -4,5 +4,3 @@ __pycache__/
 *.pyc
 
 storage/processed_emails.json
-
-storage/recipients/

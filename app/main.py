@@ -3,7 +3,6 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.auth.google_auth import router as google_auth_router
 from app.api.knowledge_base import router as knowledge_base_router
-from app.api.campaign import router as campaign_router
 
 
 # =========================================================
@@ -38,10 +37,6 @@ app.include_router(
 
 app.include_router(
     knowledge_base_router
-)
-
-app.include_router(
-    campaign_router
 )
 
 
