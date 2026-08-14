@@ -1,9 +1,7 @@
-# AI-Powered Gmail Email Automation
+# ai-powered-gmail-automation-api
 
 An AI-powered Gmail automation workflow that analyzes incoming emails, uses a knowledge base to generate context-aware responses, and creates Gmail drafts for human review before sending.
-
 ---
-
 ## Overview
 
 This project automates the process of handling incoming Gmail emails with AI.
