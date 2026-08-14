@@ -22,7 +22,23 @@ Instead of manually reading every email and writing a response, the system:
 The system does **not automatically send emails**. Human review remains the final control point.
 
 ---
+## Project Purpose
 
+The goal of this project is to reduce the time businesses spend reading and responding to repetitive emails. AI analyzes incoming Gmail messages, understands their context, and prepares personalized reply drafts based on the business's knowledge and communication needs. Instead of fully automating the final response, the workflow keeps a human in control—allowing the user to review, edit, and send the response from Gmail. This helps businesses handle email communication faster, more consistently, and with less manual effort.
+
+---
+## Technology Stack
+
+- Python
+- FastAPI
+- Gmail API
+- Google OAuth 2.0
+- OpenAI API
+- Gmail Draft API
+- Python-dotenv
+
+  ---
+  
 ## Workflow
 
                 Incoming Gmail Email
@@ -467,39 +483,8 @@ This approach provides automation while maintaining human oversight.
 
 ---
 
-## Technology Stack
 
-- Python
-- FastAPI
-- Gmail API
-- Google OAuth 2.0
-- OpenAI API
-- Gmail Draft API
-- Python-dotenv
 
----
 
-## Future Improvements
 
-Potential future improvements include:
 
-- Automatic Gmail push notifications
-- Background email processing
-- Multiple Knowledge Bases
-- Per-user Knowledge Bases
-- Better document retrieval
-- Email classification
-- Priority-based automation
-- Admin dashboard
-- Production database integration
-- Docker deployment
-- Cloud deployment
-- Advanced observability and logging
-
----
-
-## Project Purpose
-
-The goal of this project is to demonstrate how AI can be integrated with Gmail to create a practical, human-controlled email automation workflow.
-
-Instead of replacing the user completely, the system handles the repetitive work of understanding emails and preparing responses while keeping the final decision and sending action under human control.
